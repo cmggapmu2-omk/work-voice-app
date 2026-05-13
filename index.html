@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Work Automation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --pri:#1a237e;--pri2:#3949ab;--ok:#2e7d32;--err:#c62828;
+  --bg:#f0f2f5;--card:#fff;--txt:#222;--txt2:#666;
+  --bdr:#e0e0e0;--rad:14px
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:30px
+}
+
+/* ---- SETUP OVERLAY ---- */
+#setupOverlay{
+  position:fixed;inset:0;background:linear-gradient(135deg,#1a237e,#3949ab);
+  z-index:999;display:flex;align-items:center;justify-content:center;padding:20px
+}
+.setup-box{
+  background:#fff;border-radius:20px;padding:28px 22px;
+  width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)
+}
+.setup-logo{font-size:48px;text-align:center;margin-bottom:8px}
+.setup-title{font-size:20px;font-weight:700;color:#1a237e;text-align:center;margin-bottom:4px}
+.setup-sub{font-size:12px;color:#666;text-align:center;margin-bottom:20px;line-height:1.5}
+.setup-step{
+  background:#e8eaf6;border-radius:10px;padding:12px;
+  margin-bottom:12px;font-size:12px;line-height:1.6;color:#333
+}
+.setup-step strong{color:#1a237e;display:block;margin-bottom:4px}
+.setup-label{font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block}
+.setup-input{
+  width:100%;padding:12px 14px;border:2px solid #c5cae9;border-radius:10px;
+  font-size:13px;color:#333;font-family:inherit;margin-bottom:6px
+}
+.setup-input:focus{outline:none;border-color:#1a237e}
+.setup-hint{font-size:11px;color:#888;margin-bottom:16px;line-height:1.5}
+.setup-btn{
+  width:100%;padding:14px;background:linear-gradient(135deg,#1a237e,#3949ab);
+  color:#fff;border:none;border-radius:10px;font-size:15px;
+  font-weight:700;cursor:pointer;font-family:inherit
+}
+.setup-saved{
+  background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;
+  padding:10px 14px;font-size:12px;color:#2e7d32;
+  margin-bottom:12px;display:none;align-items:center;gap:8px
+}
+
+/* ---- HEADER ---- */
+.hdr{
+  background:linear-gradient(135deg,var(--pri),var(--pri2));
+  color:#fff;padding:14px 16px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 16px rgba(0,0,0,0.2)
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.hdr-date{font-size:11px;opacity:.8;margin-top:3px}
+.hdr-right{text-align:right}
+.settings-btn{
+  background:rgba(255,255,255,.2);border:none;color:#fff;
+  padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit
+}
+.sts-bar{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.sts-dot{display:flex;align-items:center;gap:5px;font-size:10px;opacity:.9}
+.dot{width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0}
+.dot.on{background:#4caf50}
+.dot.off{background:#f44336}
+.dot.ld{background:#ffb300;animation:pls 1s infinite}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ---- MIC BANNER ---- */
+.mic-ban{
+  display:none;align-items:center;padding:10px 16px;
+  background:#fff3e0;border-bottom:2px solid #ffb74d;
+  font-size:12px;color:#333;line-height:1.5;flex-wrap:wrap;gap:6px
+}
+.mic-ban.ok{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+.mic-ban.er{background:#ffebee;border-color:#ef9a9a;color:#c62828}
+.mic-lnk{
+  color:#1a237e;text-decoration:underline;cursor:pointer;
+  font-weight:700;background:rgba(26,35,126,.08);
+  padding:2px 8px;border-radius:4px
+}
+
+/* ---- TABS ---- */
+.tabs{
+  display:flex;background:#fff;border-bottom:2px solid var(--bdr);
+  position:sticky;top:94px;z-index:99;
+  box-shadow:0 2px 8px rgba(0,0,0,.06)
+}
+.tab{
+  flex:1;padding:10px 4px;text-align:center;font-size:11px;
+  font-weight:600;color:var(--txt2);border:none;background:none;
+  cursor:pointer;border-bottom:3px solid transparent;transition:.2s
+}
+.tab.act{color:var(--pri);border-bottom-color:var(--pri);background:rgba(26,35,126,.04)}
+.tab-ic{font-size:22px;display:block;margin-bottom:3px}
+
+/* ---- PANELS ---- */
+.cnt{padding:14px;max-width:600px;margin:0 auto}
+.pnl{display:none}.pnl.act{display:block}
+
+/* ---- CARDS ---- */
+.crd{
+  background:var(--card);border-radius:var(--rad);
+  padding:16px;margin-bottom:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);border:1px solid var(--bdr)
+}
+.crd-t{
+  font-size:14px;font-weight:700;color:var(--pri);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px
+}
+
+/* ---- STEPS ---- */
+.steps{display:flex;justify-content:center;align-items:center;gap:4px;margin:8px 0 14px}
+.step{display:flex;align-items:center;gap:4px;font-size:10px;color:#aaa;font-weight:600}
+.step.cur{color:var(--pri)}.step.done{color:var(--ok)}
+.snum{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;background:#eee;color:#aaa;font-weight:700
+}
+.step.cur .snum{background:var(--pri);color:#fff}
+.step.done .snum{background:var(--ok);color:#fff}
+.sarr{color:#ddd;font-size:16px;margin:0 2px}
+
+/* ---- VOICE BUTTON ---- */
+.vc-sec{text-align:center;padding:16px 0 10px}
+.vc-btn{
+  width:76px;height:76px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--pri),var(--pri2));
+  color:#fff;font-size:30px;cursor:pointer;
+  box-shadow:0 4px 24px rgba(26,35,126,.35);transition:all .3s
+}
+.vc-btn:active{transform:scale(.93)}
+.vc-btn.rec{
+  background:linear-gradient(135deg,#c62828,#e53935);
+  box-shadow:0 4px 24px rgba(198,40,40,.4);
+  animation:rpls 1.5s infinite
+}
+@keyframes rpls{
+  0%{box-shadow:0 4px 24px rgba(198,40,40,.35)}
+  50%{box-shadow:0 6px 40px rgba(198,40,40,.65)}
+  100%{box-shadow:0 4px 24px rgba(198,40,40,.35)}
+}
+.vc-lbl{font-size:11px;color:var(--txt2);margin-top:8px;min-height:16px}
+
+/* ---- TRANSCRIPT BOX ---- */
+.trn{
+  background:#f9f9f9;border:2px dashed #d0d0d0;
+  border-radius:10px;padding:12px;min-height:72px;
+  font-size:14px;line-height:1.65;color:var(--txt);
+  margin:10px 0;transition:border .3s;outline:none;
+  white-space:pre-wrap;cursor:text
+}
+.trn.live{border-color:var(--pri);border-style:solid;background:#f3f4ff}
+.trn:empty::before{
+  content:'🎙️ Voice input appears here...\A You can also type directly.';
+  white-space:pre;color:#bbb;font-style:italic;font-size:13px
+}
+
+/* ---- GRAMMAR PREVIEW ---- */
+.gprev{
+  background:#f1f8e9;border:1.5px solid #aed581;
+  border-radius:10px;padding:14px;margin-top:10px;display:none
+}
+.gprev.sh{display:block}
+.gprev-lbl{
+  font-size:11px;font-weight:700;color:#558b2f;
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px
+}
+.gprev-edit{
+  background:#fff;border:1.5px solid #c5e1a5;border-radius:8px;
+  padding:10px 12px;min-height:70px;font-size:13px;
+  line-height:1.7;outline:none;white-space:pre-wrap;cursor:text;
+  color:#333
+}
+.gprev-note{
+  font-size:10px;color:#689f38;margin-top:6px;
+  font-style:italic;display:flex;align-items:center;gap:4px
+}
+
+/* ---- PREVIEW BOX ---- */
+.pvbox{
+  background:#e8f5e9;border:1.5px solid #a5d6a7;
+  border-radius:10px;padding:12px;margin-top:10px;
+  font-size:12px;line-height:1.7;display:none
+}
+.pvbox.sh{display:block}
+.pvbox-lbl{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:8px;text-transform:uppercase}
+
+/* ---- FORM FIELDS ---- */
+.fg{margin-bottom:10px}
+.fl{font-size:11px;font-weight:600;color:#777;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.fi{
+  width:100%;padding:10px 12px;border:1.5px solid var(--bdr);
+  border-radius:8px;font-size:14px;color:var(--txt);
+  background:#fff;transition:.2s;font-family:inherit
+}
+.fi:focus{outline:none;border-color:var(--pri)}
+textarea.fi{min-height:90px;resize:vertical}
+
+/* ---- BUTTONS ---- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:6px;padding:12px 20px;border:none;border-radius:10px;
+  font-size:14px;font-weight:600;cursor:pointer;
+  transition:all .2s;font-family:inherit;width:100%
+}
+.btn-p{
+  background:linear-gradient(135deg,var(--pri),var(--pri2));
+  color:#fff;box-shadow:0 3px 12px rgba(26,35,126,.3)
+}
+.btn-p:hover{box-shadow:0 4px 20px rgba(26,35,126,.4)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-s{background:#fff;color:var(--pri);border:2px solid var(--pri)}
+.btn-o{background:#e65100;color:#fff;box-shadow:0 3px 12px rgba(230,81,0,.3)}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto}
+.btn-row{display:flex;gap:8px;margin-top:12px}
+
+/* ---- QUICK ACTIONS ---- */
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.qa-b{
+  padding:8px 6px;background:#e8eaf6;border:none;border-radius:8px;
+  font-size:11px;color:#1a237e;cursor:pointer;
+  font-weight:500;font-family:inherit;transition:.15s;text-align:center
+}
+.qa-b:active{background:#c5cae9}
+
+/* ---- MANUAL TOGGLE ---- */
+.mtg{
+  font-size:12px;color:var(--pri);cursor:pointer;
+  text-align:center;padding:6px;text-decoration:underline;opacity:.8
+}
+.mfm{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bdr)}
+.mfm.sh{display:block}
+
+/* ---- TOAST ---- */
+.tst-c{
+  position:fixed;top:14px;right:14px;left:14px;
+  z-index:1000;display:flex;flex-direction:column;gap:6px;pointer-events:none
+}
+.tst{
+  background:#fff;border-radius:12px;padding:12px 14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.15);
+  display:flex;align-items:flex-start;gap:10px;
+  animation:tstin .3s ease;pointer-events:auto;
+  border-left:4px solid var(--pri)
+}
+.tst.ok{border-left-color:var(--ok)}
+.tst.er{border-left-color:var(--err)}
+.tst.in{border-left-color:#0288d1}
+.tst-ic{font-size:20px;flex-shrink:0;margin-top:1px}
+.tst-tt{font-size:13px;font-weight:700}
+.tst-mg{font-size:11px;color:#666;margin-top:2px;line-height:1.4}
+@keyframes tstin{from{transform:translateY(-16px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ---- DATA TABLE ---- */
+.dtb{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.dtb th{background:var(--pri);color:#fff;padding:8px;text-align:left;font-size:10px;text-transform:uppercase}
+.dtb td{padding:7px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.dtb tr:nth-child(even) td{background:#fafafa}
+.dtb tr:last-child td{border-bottom:none}
+
+/* ---- EVENT ITEM ---- */
+.ev-i{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #f5f5f5}
+.ev-i:last-child{border-bottom:none}
+.ev-tm{font-size:10px;font-weight:700;color:var(--pri);min-width:60px;padding-top:2px}
+.ev-info .ev-tt{font-size:13px;font-weight:600}
+.ev-info .ev-gs{font-size:10px;color:var(--txt2);margin-top:2px}
+
+/* ---- LOADING ---- */
+.spn{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-radius:50%;border-top-color:#fff;animation:sp .7s linear infinite;vertical-align:middle}
+.spn-d{border-color:rgba(0,0,0,.1);border-top-color:var(--pri)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.emp{text-align:center;padding:24px 16px;color:var(--txt2)}
+.emp-ic{font-size:36px;margin-bottom:8px}
+.emp-tx{font-size:13px}
+
+@media(max-width:380px){
+  .cnt{padding:10px}
+  .crd{padding:12px}
+  .hdr h1{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP OVERLAY ============ -->
+<div id="setupOverlay">
+  <div class="setup-box">
+    <div class="setup-logo">⚡</div>
+    <div class="setup-title">Work Automation</div>
+    <div class="setup-sub">Connect your Google Apps Script to get started</div>
+
+    <div class="setup-saved" id="savedMsg">
+      ✅ URL already saved! Loading your dashboard...
+    </div>
+
+    <div class="setup-step">
+      <strong>📋 How to get your Apps Script URL:</strong>
+      1. Open script.google.com<br>
+      2. Open your project → Click "Deploy"<br>
+      3. Click "Manage deployments"<br>
+      4. Copy the Web App URL shown there
+    </div>
+
+    <label class="setup-label">Paste your Apps Script URL below:</label>
+    <input
+      type="url"
+      class="setup-input"
+      id="gasUrlInput"
+      placeholder="https://script.google.com/macros/s/.../exec"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    >
+    <div class="setup-hint">
+      ℹ️ This URL is saved on your phone only. Nobody else can see it.
+    </div>
+
+    <button class="setup-btn" onclick="saveSetup()">✅ Save & Open Dashboard</button>
+  </div>
+</div>
+
+<!-- ============ MIC BANNER ============ -->
+<div class="mic-ban" id="micBanner">
+  🎙️ Checking microphone...
+</div>
+
+<!-- ============ HEADER ============ -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <h1>⚡ Work Automation</h1>
+      <div class="hdr-date" id="hdrDate"></div>
+    </div>
+    <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+  </div>
+  <div class="sts-bar">
+    <div class="sts-dot"><span class="dot ld" id="dCal"></span> Calendar</div>
+    <div class="sts-dot"><span class="dot ld" id="dDoc"></span> Doc</div>
+    <div class="sts-dot"><span class="dot ld" id="dTrk"></span> Tracker</div>
+  </div>
+</div>
+
+<!-- ============ TABS ============ -->
+<div class="tabs">
+  <button class="tab act" onclick="swTab('cal',this)">
+    <span class="tab-ic">📅</span>Calendar
+  </button>
+  <button class="tab" onclick="swTab('doc',this)">
+    <span class="tab-ic">📝</span>Daily Doc
+  </button>
+  <button class="tab" onclick="swTab('trk',this)">
+    <span class="tab-ic">📊</span>Tracker
+  </button>
+</div>
+
+<!-- ============ TOAST AREA ============ -->
+<div class="tst-c" id="tstC"></div>
+
+<!-- ============ CONTENT ============ -->
+<div class="cnt">
+
+  <!-- CALENDAR -->
+  <div class="pnl act" id="pCal">
+    <div class="crd">
+      <div class="crd-t">📅 Add Calendar Event</div>
+      <div class="steps">
+        <div class="step cur" id="cS1"><span class="snum">1</span>Speak</div>
+        <span class="sarr">›</span>
+        <div class="step" id="cS2"><span class="snum">2</span>Review</div>
+        <span class="sarr">›</span>
+        <div class="step" id="cS3"><span class="snum">3</span>Save</div>
+      </div>
+      <div class="vc-sec">
+        <button class="vc-btn" id="vbCal" onclick="startVoice('cal')">🎙️</button>
+        <div class="vc-lbl" id="vlCal">Tap to speak your meeting details</div>
+      </div>
+      <div class="trn" id="trCal" contenteditable="true" 
+           oninput="this.setAttribute('data-typed','1')"></div>
+      <div class="qa">
+        <button class="qa-b" onclick="setTxt('cal','Schedule meeting about project review tomorrow at 3 PM to 4 PM')">📋 Project Review</button>
+        <button class="qa-b" onclick="setTxt('cal','Schedule team standup today at 10 AM to 10:30 AM')">👥 Team Standup</button>
+        <button class="qa-b" onclick="setTxt('cal','Schedule site visit meeting tomorrow at 11 AM to 12 PM')">🏗️ Site Visit</button>
+        <button class="qa-b" onclick="setTxt('cal','Schedule budget review meeting on Monday at 2 PM to 3 PM')">💰 Budget Review</button>
+      </div>
+      <div class="mtg" onclick="tgEl('mfCal')">📝 Fill manually instead ▾</div>
+      <div class="mfm" id="mfCal">
+        <div class="fg">
+          <label class="fl">Meeting Title</label>
+          <input class="fi" id="cTt" placeholder="e.g. Project Review Meeting">
+        </div>
+        <div class="fg">
+          <label class="fl">Date (DD/MM/YYYY)</label>
+          <input class="fi" id="cDt" placeholder="e.g. 25/01/2025">
+        </div>
+        <div class="fg">
+          <label class="fl">Start Time</label>
+          <input class="fi" id="cSt" placeholder="e.g. 3:00 PM">
+        </div>
+        <div class="fg">
+          <label class="fl">End Time</label>
+          <input class="fi" id="cEt" placeholder="e.g. 4:00 PM">
+        </div>
+        <div class="fg">
+          <label class="fl">Guest Emails (comma separated)</label>
+          <input class="fi" id="cGs" placeholder="a@gmail.com, b@gov.in">
+        </div>
+        <div class="fg">
+          <label class="fl">Description / Agenda</label>
+          <textarea class="fi" id="cDs" placeholder="Meeting agenda..."></textarea>
+        </div>
+      </div>
+      <div class="pvbox" id="pvCal">
+        <div class="pvbox-lbl">📋 Parsed Details — Review Before Saving</div>
+        <div id="pvCalC"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s btn-sm" onclick="prevCal()" style="flex:1">👁️ Preview</button>
+        <button class="btn btn-p" id="sbCal" onclick="submitCal()" style="flex:2.5">📅 Add to Calendar</button>
+      </div>
+    </div>
+    <div class="crd">
+      <div class="crd-t">
+        📅 Today's Events
+        <button class="btn btn-sm btn-s" onclick="ldCal()" style="margin-left:auto">↻ Refresh</button>
+      </div>
+      <div id="calEvs">
+        <div class="emp"><span class="spn spn-d"></span><div class="emp-tx" style="margin-top:8px">Loading events...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTATION -->
+  <div class="pnl" id="pDoc">
+    <div class="crd">
+      <div class="crd-t">📝 Daily Work Documentation</div>
+      <div class="steps">
+        <div class="step cur" id="dS1"><span class="snum">1</span>Speak</div>
+        <span class="sarr">›</span>
+        <div class="step" id="dS2"><span class="snum">2</span>Grammar</div>
+        <span class="sarr">›</span>
+        <div class="step" id="dS3"><span class="snum">3</span>Save</div>
+      </div>
+      <div class="vc-sec">
+        <button class="vc-btn" id="vbDoc" onclick="startVoice('doc')">🎙️</button>
+        <div class="vc-lbl" id="vlDoc">Speak your daily work naturally</div>
+      </div>
+      <div class="trn" id="trDoc" contenteditable="true"
+           oninput="this.setAttribute('data-typed','1')"></div>
+      <div class="qa">
+        <button class="qa-b" onclick="addTxt('doc','Attended morning standup with the team. ')">🌅 Standup</button>
+        <button class="qa-b" onclick="addTxt('doc','Reviewed and responded to official emails. ')">📧 Emails</button>
+        <button class="qa-b" onclick="addTxt('doc','Prepared and submitted the required report. ')">📄 Report</button>
+        <button class="qa-b" onclick="addTxt('doc','Coordinated with stakeholders on the project. ')">🤝 Coordination</button>
+        <button class="qa-b" onclick="addTxt('doc','Attended review meeting with senior officials. ')">👔 Review Mtg</button>
+        <button class="qa-b" onclick="addTxt('doc','Conducted site visit and inspection. ')">🏗️ Site Visit</button>
+      </div>
+      <div class="gprev" id="gprev">
+        <div class="gprev-lbl">✨ Grammar Corrected
+          <span style="font-size:10px;font-weight:400;color:#8bc34a">(edit freely below)</span>
+        </div>
+        <div class="gprev-edit" id="gprevE" contenteditable="true"></div>
+        <div class="gprev-note">✏️ This corrected text will be saved to your Google Doc. Edit anything above.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-o btn-sm" onclick="checkGrammar()" style="flex:1.3" id="gramBtn">✨ Check Grammar</button>
+        <button class="btn btn-p" id="sbDoc" onclick="submitDoc()" style="flex:2">📝 Save to Doc</button>
+      </div>
+    </div>
+    <div class="crd">
+      <div class="crd-t">
+        📄 Last Entry Preview
+        <button class="btn btn-sm btn-s" onclick="ldDoc()" style="margin-left:auto">↻ Refresh</button>
+      </div>
+      <div id="rcDoc">
+        <div class="emp"><span class="spn spn-d"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACKER -->
+  <div class="pnl" id="pTrk">
+    <div class="crd">
+      <div class="crd-t">📊 Daily Work Tracker</div>
+      <div class="steps">
+        <div class="step cur" id="tS1"><span class="snum">1</span>Speak</div>
+        <span class="sarr">›</span>
+        <div class="step" id="tS2"><span class="snum">2</span>Review</div>
+        <span class="sarr">›</span>
+        <div class="step" id="tS3"><span class="snum">3</span>Save</div>
+      </div>
+      <div class="vc-sec">
+        <button class="vc-btn" id="vbTrk" onclick="startVoice('trk')">🎙️</button>
+        <div class="vc-lbl" id="vlTrk">Say: Task name, stakeholder, remark</div>
+      </div>
+      <div class="trn" id="trTrk" contenteditable="true"
+           oninput="this.setAttribute('data-typed','1')"></div>
+      <div class="mtg" onclick="tgEl('mfTrk')">📝 Fill manually instead ▾</div>
+      <div class="mfm" id="mfTrk">
+        <div class="fg">
+          <label class="fl">Task Name</label>
+          <input class="fi" id="tTk" placeholder="e.g. File review and processing">
+        </div>
+        <div class="fg">
+          <label class="fl">Date</label>
+          <input class="fi" id="tDt">
+        </div>
+        <div class="fg">
+          <label class="fl">Stakeholder Engaged</label>
+          <input class="fi" id="tSh" placeholder="e.g. DM Office, BDO">
+        </div>
+        <div class="fg">
+          <label class="fl">Remark</label>
+          <input class="fi" id="tRm" placeholder="e.g. Completed / In Progress">
+        </div>
+      </div>
+      <div class="pvbox" id="pvTrk">
+        <div class="pvbox-lbl">📋 Entry Preview — Check Before Saving</div>
+        <div id="pvTrkC"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-s btn-sm" onclick="prevTrk()" style="flex:1">👁️ Preview</button>
+        <button class="btn btn-p" id="sbTrk" onclick="submitTrk()" style="flex:2.5">📊 Update Tracker</button>
+      </div>
+    </div>
+    <div class="crd">
+      <div class="crd-t">
+        📊 Recent Entries
+        <button class="btn btn-sm btn-s" onclick="ldTrk()" style="margin-left:auto">↻ Refresh</button>
+      </div>
+      <div id="trkRows" style="overflow-x:auto">
+        <div class="emp"><span class="spn spn-d"></span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .cnt -->
+
+<script>
+// ================================================
+// CONFIGURATION & SETUP
+// ================================================
+var GAS = localStorage.getItem('gasUrl') || '';
+var OV  = document.getElementById('setupOverlay');
+
+function init() {
+  if (!GAS) {
+    // Show setup screen
+    OV.style.display = 'flex';
+    return;
+  }
+  // Already have URL — hide setup and start
+  OV.style.display = 'none';
+  askMic();
+  loadAll();
+}
+
+function saveSetup() {
+  var url = (document.getElementById('gasUrlInput').value || '').trim();
+  if (!url) {
+    alert('Please paste your Apps Script URL first.');
+    return;
+  }
+  if (!url.startsWith('https://script.google.com')) {
+    alert('That does not look like an Apps Script URL.\n\nIt should start with:\nhttps://script.google.com/macros/s/');
+    return;
+  }
+  localStorage.setItem('gasUrl', url);
+  GAS = url;
+  OV.style.display = 'none';
+  toast('s', 'Connected!', 'Connecting to your Google services...');
+  askMic();
+  loadAll();
+}
+
+function openSettings() {
+  var current = localStorage.getItem('gasUrl') || '';
+  document.getElementById('gasUrlInput').value = current;
+  var sm = document.getElementById('savedMsg');
+  if (current) { sm.style.display = 'flex'; }
+  else         { sm.style.display = 'none';  }
+  OV.style.display = 'flex';
+}
+
+// ================================================
+// DATE & AUTO-FILL
+// ================================================
+document.getElementById('hdrDate').textContent =
+  new Date().toLocaleDateString('en-IN',
+    {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+var tDt = document.getElementById('tDt');
+if (tDt) tDt.value = new Date().toLocaleDateString('en-IN',
+  {day:'2-digit',month:'2-digit',year:'numeric'});
+
+// ================================================
+// MICROPHONE PERMISSION — asked on page open
+// ================================================
+function askMic() {
+  var ban = document.getElementById('micBanner');
+  ban.style.display = 'flex';
+  ban.className = 'mic-ban';
+  ban.innerHTML = '🎙️ Requesting microphone access...';
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    ban.className = 'mic-ban er';
+    ban.innerHTML = '⚠️ This browser cannot access microphone. Please use <strong>Chrome</strong> on Android.';
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then(function(stream) {
+      // Stop immediately — we only needed the permission popup
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      ban.className = 'mic-ban ok';
+      ban.innerHTML = '✅ Microphone ready — Voice input enabled!';
+      setTimeout(function() { ban.style.display = 'none'; }, 3000);
+    })
+    .catch(function(err) {
+      ban.className = 'mic-ban er';
+      if (err.name === 'NotAllowedError') {
+        ban.innerHTML =
+          '🚫 <strong>Microphone blocked.</strong> ' +
+          'Tap the 🔒 lock in address bar → Site settings → Microphone → Allow. ' +
+          '<span class="mic-lnk" onclick="askMic()">Try Again</span>';
+      } else if (err.name === 'NotFoundError') {
+        ban.innerHTML = '⚠️ No microphone found. Use manual input forms below.';
+      } else {
+        ban.innerHTML = '⚠️ Mic error: ' + err.name +
+          ' <span class="mic-lnk" onclick="askMic()">Retry</span>';
+      }
+    });
+}
+
+// ================================================
+// VOICE RECOGNITION
+// ================================================
+var recog = null, recTarget = null, isRec = false;
+
+var VID = {
+  cal: { btn:'vbCal', lbl:'vlCal', trn:'trCal', s:['cS1','cS2','cS3'] },
+  doc: { btn:'vbDoc', lbl:'vlDoc', trn:'trDoc', s:['dS1','dS2','dS3'] },
+  trk: { btn:'vbTrk', lbl:'vlTrk', trn:'trTrk', s:['tS1','tS2','tS3'] }
+};
+
+function startVoice(t) {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    toast('e','Not Supported','Please use Chrome for voice input.');
+    return;
+  }
+  if (isRec) { stopVoice(); return; }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(s) {
+      s.getTracks().forEach(function(tr) { tr.stop(); });
+      doSpeech(t);
+    })
+    .catch(function(err) {
+      var ban = document.getElementById('micBanner');
+      ban.style.display = 'flex';
+      ban.className = 'mic-ban er';
+      ban.innerHTML = '🚫 Mic blocked. <span class="mic-lnk" onclick="askMic()">Tap to allow</span> or check Chrome site settings.';
+      toast('e','Mic Blocked','Allow microphone and try again.');
+    });
+}
+
+function doSpeech(t) {
+  recTarget = t;
+  var m   = VID[t];
+  var btn = document.getElementById(m.btn);
+  var lbl = document.getElementById(m.lbl);
+  var trn = document.getElementById(m.trn);
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recog  = new SR();
+  recog.lang             = 'en-IN';
+  recog.interimResults   = true;
+  recog.continuous       = true;
+  recog.maxAlternatives  = 1;
+
+  recog.onstart = function() {
+    isRec = true;
+    btn.classList.add('rec'); btn.textContent = '⏹️';
+    lbl.textContent = '🔴 Recording... tap button to stop';
+    trn.classList.add('live');
+    toast('i','Recording','Speak now. Tap the button to stop.');
+  };
+
+  recog.onresult = function(e) {
+    var fin = '', intr = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin  += e.results[i][0].transcript + ' ';
+      else                       intr += e.results[i][0].transcript;
+    }
+    var prev = trn.getAttribute('data-final') || '';
+    trn.setAttribute('data-final', prev + fin);
+    trn.textContent = (prev + fin + intr).trim();
+  };
+
+  recog.onerror = function(e) {
+    if      (e.error === 'not-allowed') { toast('e','Mic Blocked','Allow mic and retry.'); stopVoice(); }
+    else if (e.error === 'network')     { toast('e','Network Error','Check internet.'); stopVoice(); }
+    else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      toast('e','Error', e.error); stopVoice();
+    }
+  };
+
+  recog.onend = function() {
+    if (isRec) { try { recog.start(); } catch(ex) { stopVoice(); } }
+  };
+
+  try { recog.start(); }
+  catch(ex) { toast('e','Failed', ex.message); }
+}
+
+function stopVoice() {
+  isRec = false;
+  if (recog) {
+    recog.onend = null;
+    try { recog.stop(); } catch(e) {}
+    recog = null;
+  }
+  if (!recTarget) return;
+
+  var m   = VID[recTarget];
+  var btn = document.getElementById(m.btn);
+  var lbl = document.getElementById(m.lbl);
+  var trn = document.getElementById(m.trn);
+
+  btn.classList.remove('rec'); btn.textContent = '🎙️';
+  lbl.textContent = 'Tap to speak';
+  trn.classList.remove('live');
+
+  var ft = trn.getAttribute('data-final') || trn.textContent;
+  trn.textContent = ft.trim();
+  trn.removeAttribute('data-final');
+
+  if (ft.trim()) {
+    setStep(recTarget, 2);
+    toast('s','Voice Captured','Read the text above — edit anything wrong, then proceed.');
+  }
+  recTarget = null;
+}
+
+// ================================================
+// STEP INDICATOR
+// ================================================
+function setStep(t, step) {
+  VID[t].s.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    el.className = 'step';
+    if (i + 1 < step)      el.classList.add('done');
+    else if (i + 1 === step) el.classList.add('cur');
+  });
+}
+
+// ================================================
+// TEXT HELPERS
+// ================================================
+function setTxt(t, txt) {
+  document.getElementById(VID[t].trn).textContent = txt;
+}
+function addTxt(t, txt) {
+  var el = document.getElementById(VID[t].trn);
+  el.textContent = (el.textContent + ' ' + txt).trim();
+}
+function tgEl(id) {
+  document.getElementById(id).classList.toggle('sh');
+}
+
+// ================================================
+// GRAMMAR CORRECTION (client-side)
+// ================================================
+function fixGrammar(raw) {
+  var t = raw.trim();
+  if (!t) return t;
+
+  var fixes = [
+    [/\bi\b/g,'I'],
+    [/\bi'm\b/gi,'I am'],[/\bi've\b/gi,'I have'],
+    [/\bi'll\b/gi,'I will'],[/\bi'd\b/gi,'I would'],
+    [/\bcan't\b/gi,'cannot'],[/\bdon't\b/gi,'do not'],
+    [/\bwon't\b/gi,'will not'],[/\bdoesn't\b/gi,'does not'],
+    [/\bdidn't\b/gi,'did not'],[/\bwasn't\b/gi,'was not'],
+    [/\bweren't\b/gi,'were not'],[/\bhaven't\b/gi,'have not'],
+    [/\bcouldn't\b/gi,'could not'],[/\bshouldn't\b/gi,'should not'],
+    [/\bwouldn't\b/gi,'would not'],[/\blet's\b/gi,'let us'],
+    [/\bit's\b/gi,'it is'],[/\bthat's\b/gi,'that is'],
+    [/\bwe're\b/gi,'we are'],[/\bthey're\b/gi,'they are'],
+    [/\bwe've\b/gi,'we have'],[/\bwe'll\b/gi,'we will'],
+    [/\bgonna\b/gi,'going to'],[/\bwanna\b/gi,'want to'],
+    [/\bgotta\b/gi,'have to'],[/\bkinda\b/gi,'kind of'],
+    [/\btalk(?:ed)?\s+(?:to|with)\b/gi,'discussed with'],
+    [/\btalk(?:ed)?\s+about\b/gi,'discussed regarding'],
+    [/\bgot\b/gi,'received'],[/\bfix(?:ed)?\b/gi,'resolved'],
+    [/\bcheck(?:ed)?\b/gi,'reviewed'],[/\bhelp(?:ed)?\b/gi,'assisted'],
+    [/\bcall(?:ed)?\b/gi,'contacted'],[/\bsent\b/gi,'forwarded'],
+    [/\bmade\b/gi,'prepared'],[/\bset\s+up\b/gi,'arranged'],
+    [/\bfinish(?:ed)?\b/gi,'completed'],[/\bstart(?:ed)?\b/gi,'commenced'],
+    [/\bgave\b/gi,'provided'],[/\basked\b/gi,'requested'],
+    [/\btold\b/gi,'informed'],[/\bwent\s+to\b/gi,'visited'],
+    [/\b(um|uh|hmm|like|you know|basically|actually|so yeah|okay so)\b/gi,'']
+  ];
+
+  fixes.forEach(function(f) { t = t.replace(f[0], f[1]); });
+  t = t.replace(/\s{2,}/g, ' ');
+  t = t.replace(/(^|\.\s+)([a-z])/g, function(m, p1, p2) { return p1 + p2.toUpperCase(); });
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  if (!t.match(/[.!?]$/)) t += '.';
+
+  // Break into paragraphs
+  var sents = t.split(/(?<=[.!?])\s+/);
+  var paras = [], cur = [];
+  sents.forEach(function(s) {
+    cur.push(s);
+    if (cur.length >= 3 ||
+        s.match(/^(Then|After|Next|Also|Additionally|Furthermore|Later|In the)/i)) {
+      paras.push(cur.join(' ')); cur = [];
+    }
+  });
+  if (cur.length) paras.push(cur.join(' '));
+  return paras.join('\n\n');
+}
+
+// ================================================
+// GRAMMAR CHECK (calls backend, falls back to client)
+// ================================================
+function checkGrammar() {
+  var raw = document.getElementById('trDoc').textContent.trim();
+  if (!raw) { toast('i','Nothing to check','Speak or type your work first.'); return; }
+
+  var gp  = document.getElementById('gprev');
+  var gpE = document.getElementById('gprevE');
+  gp.classList.add('sh');
+  gpE.innerHTML = '<span class="spn spn-d"></span> Correcting grammar...';
+
+  call('polishText', { text: raw },
+    function(r) {
+      gpE.textContent = (r.success && r.polished) ? r.polished : fixGrammar(raw);
+      setStep('doc', 2);
+      toast('s','Grammar Corrected','Review the text below. Edit anything before saving.');
+    },
+    function() {
+      gpE.textContent = fixGrammar(raw);
+      setStep('doc', 2);
+      toast('s','Grammar Corrected','Review the text below. Edit anything before saving.');
+    }
+  );
+}
+
+// ================================================
+// CALENDAR PREVIEW
+// ================================================
+function prevCal() {
+  var txt = document.getElementById('trCal').textContent.trim();
+  var mf  = document.getElementById('mfCal').classList.contains('sh');
+  if (!txt && !mf) { toast('i','Empty','Speak or type meeting details first.'); return; }
+
+  var html = '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+  if (txt) {
+    var tl = txt.toLowerCase();
+    var title = txt.split(/\s+(?:on|at|from|tomorrow|today)/i)[0]
+      .replace(/^(?:schedule|create|add|book|plan)\s+(?:a\s+)?(?:meeting\s+)?(?:about|for|regarding)?\s*/i,'').trim();
+    var dateM  = tl.match(/(today|tomorrow|day after tomorrow|\d{1,2}(?:st|nd|rd|th)?\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*)/i);
+    var times  = tl.match(/\d{1,2}(?::\d{2})?\s*(?:am|pm)/gi);
+    var emails = txt.match(/[\w.+-]+@[\w-]+\.[\w.]+/g);
+    html += row('Title', title || '(not detected)');
+    html += row('Date',  dateM ? dateM[0] : 'Not detected — say "today" or "tomorrow"');
+    html += row('Time',  times ? times.join(' → ') : 'Not detected — say "at 3 PM to 4 PM"');
+    html += row('Guests',emails ? emails.join(', ') : 'None');
+  } else {
+    html += row('Title', v('cTt'));
+    html += row('Date',  v('cDt'));
+    html += row('Time',  v('cSt') + ' → ' + v('cEt'));
+    html += row('Guests',v('cGs') || 'None');
+  }
+  html += '</table>';
+  document.getElementById('pvCalC').innerHTML = html;
+  document.getElementById('pvCal').classList.add('sh');
+  setStep('cal', 2);
+}
+
+// ================================================
+// TRACKER PREVIEW
+// ================================================
+function prevTrk() {
+  var txt = document.getElementById('trTrk').textContent.trim();
+  var mf  = document.getElementById('mfTrk').classList.contains('sh');
+  if (!txt && !mf) { toast('i','Empty','Speak or type task details first.'); return; }
+
+  var html = '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+  if (txt) {
+    var tkM = txt.match(/(?:task|worked on|completed)\s*[:\-]?\s*(.+?)(?:\s*(?:,|with|stakeholder|remark|$))/i);
+    var shM = txt.match(/(?:with|stakeholder)\s*[:\-]?\s*(.+?)(?:\s*(?:,|remark|$))/i);
+    var rmM = txt.match(/(?:remark|note|status)\s*[:\-]?\s*(.+?)$/i);
+    html += row('Task',        (tkM ? tkM[1] : txt.split(/[,]/)[0]).trim());
+    html += row('Date',        'Today — ' + new Date().toLocaleDateString('en-IN'));
+    html += row('Stakeholder', shM ? shM[1] : '(not detected)');
+    html += row('Remark',      rmM ? rmM[1] : '(not detected)');
+  } else {
+    html += row('Task',        v('tTk'));
+    html += row('Date',        v('tDt'));
+    html += row('Stakeholder', v('tSh') || 'None');
+    html += row('Remark',      v('tRm') || 'None');
+  }
+  html += '</table>';
+  document.getElementById('pvTrkC').innerHTML = html;
+  document.getElementById('pvTrk').classList.add('sh');
+  setStep('trk', 2);
+}
+
+function row(label, value) {
+  return '<tr><td style="padding:5px 6px;font-weight:700;color:#555;width:90px;vertical-align:top">' +
+         label + ':</td><td style="padding:5px 6px;color:#222">' + value + '</td></tr>';
+}
+function v(id) { return document.getElementById(id).value || '—'; }
+
+// ================================================
+// SUBMIT: CALENDAR
+// ================================================
+function submitCal() {
+  var btn = document.getElementById('sbCal');
+  var txt = document.getElementById('trCal').textContent.trim();
+  var mf  = document.getElementById('mfCal').classList.contains('sh');
+  var d   = {};
+
+  if (txt) d.rawText = txt;
+  if (mf) {
+    d.title       = v('cTt');
+    d.date        = v('cDt');
+    d.startTime   = v('cSt');
+    d.endTime     = v('cEt');
+    d.guests      = v('cGs');
+    d.description = v('cDs');
+  }
+  if (!txt && !d.title) { toast('e','Empty','Provide voice input or fill the form.'); return; }
+
+  ld(btn, true); setStep('cal', 3);
+  call('calendar', d,
+    function(r) {
+      ld(btn, false);
+      if (r.success) {
+        toast('s','Calendar Updated! ✅',
+          r.details ? r.details.title + ' — ' + r.details.start : r.message);
+        document.getElementById('trCal').textContent = '';
+        document.getElementById('pvCal').classList.remove('sh');
+        setStep('cal', 1); ldCal();
+      } else {
+        toast('e','Failed', r.message); setStep('cal', 2);
+      }
+    },
+    function(err) { ld(btn,false); toast('e','Error',err); setStep('cal',2); }
+  );
+}
+
+// ================================================
+// SUBMIT: DOCUMENTATION
+// ================================================
+function submitDoc() {
+  var btn  = document.getElementById('sbDoc');
+  var raw  = document.getElementById('trDoc').textContent.trim();
+  var gp   = document.getElementById('gprev');
+  var gpE  = document.getElementById('gprevE');
+
+  if (!raw) { toast('e','Empty','Speak or type your work first.'); return; }
+
+  if (!gp.classList.contains('sh')) {
+    toast('i','Check Grammar First','Tap ✨ Check Grammar to review before saving.');
+    return;
+  }
+
+  var corrected = gpE.textContent.trim();
+  if (!corrected) { toast('e','Empty','Grammar box is empty.'); return; }
+
+  ld(btn, true); setStep('doc', 3);
+  call('documentation', { rawText: raw, correctedText: corrected },
+    function(r) {
+      ld(btn, false);
+      if (r.success) {
+        toast('s','Saved to Google Doc! ✅','Your daily work has been documented.');
+        document.getElementById('trDoc').textContent = '';
+        gp.classList.remove('sh'); gpE.textContent = '';
+        setStep('doc', 1); ldDoc();
+      } else {
+        toast('e','Failed', r.message); setStep('doc', 2);
+      }
+    },
+    function(err) { ld(btn,false); toast('e','Error',err); setStep('doc',2); }
+  );
+}
+
+// ================================================
+// SUBMIT: TRACKER
+// ================================================
+function submitTrk() {
+  var btn = document.getElementById('sbTrk');
+  var txt = document.getElementById('trTrk').textContent.trim();
+  var mf  = document.getElementById('mfTrk').classList.contains('sh');
+  var d   = {};
+
+  if (txt) d.rawText = txt;
+  if (mf) {
+    d.taskName    = v('tTk');
+    d.date        = v('tDt');
+    d.stakeholder = v('tSh');
+    d.remark      = v('tRm');
+  }
+  if (!txt && !d.taskName) { toast('e','Empty','Provide voice input or fill the form.'); return; }
+
+  ld(btn, true); setStep('trk', 3);
+  call('tracker', d,
+    function(r) {
+      ld(btn, false);
+      if (r.success) {
+        toast('s','Tracker Updated! ✅',
+          '#' + r.details.serialNumber + ': ' + r.details.taskName);
+        document.getElementById('trTrk').textContent = '';
+        document.getElementById('pvTrk').classList.remove('sh');
+        setStep('trk', 1); ldTrk();
+      } else {
+        toast('e','Failed', r.message); setStep('trk', 2);
+      }
+    },
+    function(err) { ld(btn,false); toast('e','Error',err); setStep('trk',2); }
+  );
+}
+
+// ================================================
+// LOAD DATA FROM BACKEND
+// ================================================
+function ldCal() {
+  call('getCalendarEvents', {},
+    function(r) {
+      var c = document.getElementById('calEvs');
+      if (r.success && r.events && r.events.length) {
+        c.innerHTML = r.events.map(function(e) {
+          return '<div class="ev-i">' +
+            '<div class="ev-tm">' + e.start + '<br>' + e.end + '</div>' +
+            '<div class="ev-info">' +
+              '<div class="ev-tt">' + e.title + '</div>' +
+              (e.guests && e.guests.length ?
+                '<div class="ev-gs">👥 ' + e.guests.join(', ') + '</div>' : '') +
+            '</div></div>';
+        }).join('');
+      } else {
+        c.innerHTML = '<div class="emp"><div class="emp-ic">📅</div><div class="emp-tx">No events today</div></div>';
+      }
+    },
+    function() {
+      document.getElementById('calEvs').innerHTML =
+        '<div class="emp"><div class="emp-tx" style="color:var(--err)">Could not load events</div></div>';
+    }
+  );
+}
+
+function ldDoc() {
+  call('getRecentDocs', {},
+    function(r) {
+      var c = document.getElementById('rcDoc');
+      if (r.success && r.preview) {
+        c.innerHTML =
+          '<div style="font-size:12px;line-height:1.7;color:#555;max-height:200px;overflow-y:auto;' +
+          'padding:10px;background:#fafafa;border-radius:8px;border:1px solid #eee">' +
+          r.preview.replace(/\n/g,'<br>') + '</div>' +
+          (r.docUrl ?
+            '<a href="' + r.docUrl + '" target="_blank" ' +
+            'style="font-size:12px;color:var(--pri);display:block;margin-top:8px">' +
+            '📄 Open Full Document →</a>' : '');
+      } else {
+        c.innerHTML = '<div class="emp"><div class="emp-ic">📝</div><div class="emp-tx">No entries yet</div></div>';
+      }
+    },
+    function() {
+      document.getElementById('rcDoc').innerHTML =
+        '<div class="emp"><div class="emp-tx" style="color:var(--err)">Could not load document</div></div>';
+    }
+  );
+}
+
+function ldTrk() {
+  call('getTrackerData', {},
+    function(r) {
+      var c = document.getElementById('trkRows');
+      if (r.success && r.data && r.data.length) {
+        var h = '<div style="font-size:11px;color:#888;margin-bottom:8px">Total tasks logged: <strong>' + r.totalTasks + '</strong></div>';
+        h += '<table class="dtb"><thead><tr>' +
+          '<th>S.No</th><th>Task</th><th>Date</th><th>Stakeholder</th><th>Remark</th>' +
+          '</tr></thead><tbody>';
+        r.data.forEach(function(row) {
+          h += '<tr><td>' + row.serialNumber + '</td><td>' + row.taskName +
+               '</td><td>' + row.date + '</td><td>' + row.stakeholder +
+               '</td><td>' + row.remark + '</td></tr>';
+        });
+        h += '</tbody></table>';
+        if (r.sheetUrl) h += '<a href="' + r.sheetUrl + '" target="_blank" ' +
+          'style="font-size:12px;color:var(--pri);display:block;margin-top:8px">' +
+          '📊 Open Full Sheet →</a>';
+        c.innerHTML = h;
+      } else {
+        c.innerHTML = '<div class="emp"><div class="emp-ic">📊</div><div class="emp-tx">No entries yet</div></div>';
+      }
+    },
+    function() {
+      document.getElementById('trkRows').innerHTML =
+        '<div class="emp"><div class="emp-tx" style="color:var(--err)">Could not load tracker</div></div>';
+    }
+  );
+}
+
+function chkStatus() {
+  call('getStatus', {},
+    function(s) {
+      document.getElementById('dCal').className = 'dot ' + (s.calendar      ? 'on' : 'off');
+      document.getElementById('dDoc').className = 'dot ' + (s.documentation ? 'on' : 'off');
+      document.getElementById('dTrk').className = 'dot ' + (s.tracker       ? 'on' : 'off');
+      if (s.calendar && s.documentation && s.tracker) {
+        toast('s','All Systems Connected',
+          '📅 ' + s.calendarName + '  |  📝 ' + s.docName + '  |  📊 ' + s.sheetName);
+      } else {
+        toast('e','Connection Issue','Check your Apps Script IDs in Code.gs CONFIG section.');
+      }
+    },
+    function() {
+      ['dCal','dDoc','dTrk'].forEach(function(id) {
+        document.getElementById(id).className = 'dot off';
+      });
+      toast('e','Cannot Reach Backend',
+        'Check your Apps Script URL in Settings. Also make sure you redeployed after code changes.');
+    }
+  );
+}
+
+// ================================================
+// FETCH BACKEND (GitHub Pages → Apps Script)
+// ================================================
+function call(action, data, onOk, onErr) {
+  if (!GAS) {
+    toast('e','Not Configured','Open Settings and paste your Apps Script URL.');
+    if (onErr) onErr('No URL');
+    return;
+  }
+
+  var url = GAS +
+    '?action=' + encodeURIComponent(action) +
+    '&data='   + encodeURIComponent(JSON.stringify(data || {}));
+
+  fetch(url)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(result) { if (onOk) onOk(result); })
+    .catch(function(err)   {
+      console.error('Backend error:', err);
+      if (onErr) onErr(err.message || 'Connection failed');
+    });
+}
+
+// ================================================
+// TAB SWITCHING
+// ================================================
+function swTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('act'); });
+  el.classList.add('act');
+  document.querySelectorAll('.pnl').forEach(function(p) { p.classList.remove('act'); });
+  document.getElementById({ cal:'pCal', doc:'pDoc', trk:'pTrk' }[tab]).classList.add('act');
+}
+
+// ================================================
+// TOAST
+// ================================================
+function toast(type, title, msg) {
+  var c    = document.getElementById('tstC');
+  var icon = { s:'✅', e:'❌', i:'ℹ️', w:'⚠️' }[type] || 'ℹ️';
+  var cls  = { s:'ok', e:'er', i:'in', w:'in' }[type]  || 'in';
+  var el   = document.createElement('div');
+  el.className = 'tst ' + cls;
+  el.innerHTML =
+    '<div class="tst-ic">' + icon + '</div>' +
+    '<div><div class="tst-tt">' + title + '</div>' +
+    '<div class="tst-mg">' + msg + '</div></div>';
+  c.appendChild(el);
+  setTimeout(function() {
+    el.style.transition = 'opacity .3s, transform .3s';
+    el.style.opacity = '0'; el.style.transform = 'translateY(-12px)';
+    setTimeout(function() { el.remove(); }, 320);
+  }, 5000);
+}
+
+// ================================================
+// LOADING STATE
+// ================================================
+function ld(btn, loading) {
+  if (loading) {
+    btn.disabled = true;
+    btn.setAttribute('data-orig', btn.innerHTML);
+    btn.innerHTML = '<span class="spn"></span> Saving...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.getAttribute('data-orig') || btn.innerHTML;
+  }
+}
+
+// ================================================
+// LOAD ALL DATA
+// ================================================
+function loadAll() {
+  chkStatus();
+  ldCal();
+  ldDoc();
+  ldTrk();
+}
+
+// ================================================
+// START
+// ================================================
+init();
+</script>
+</body>
+</html>
